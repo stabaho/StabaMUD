@@ -1,0 +1,107 @@
+autorun starting game Tue Jan 24 06:56:45 CST 2017
+running bin/circle -q 4000
+Jan 24 06:56:45 :: CircleMUD, version 3.1
+Jan 24 06:56:45 :: Using lib as data directory.
+Jan 24 06:56:45 :: Running game on port 4000.
+Jan 24 06:56:45 :: Finding player limit.
+Jan 24 06:56:45 ::    Setting player limit to 300 using rlimit.
+Jan 24 06:56:45 :: Opening mother connection.
+Jan 24 06:56:45 :: Binding to all IP interfaces on this host.
+Jan 24 06:56:45 :: Boot db -- BEGIN.
+Jan 24 06:56:45 :: Resetting the game time:
+Jan 24 06:56:45 ::    Current Gametime: 16H 27D 9M 779Y.
+Jan 24 06:56:45 :: Reading news, credits, help, bground, info & motds.
+Jan 24 06:56:45 :: Loading spell definitions.
+Jan 24 06:56:45 :: Loading zone table.
+Jan 24 06:56:45 ::    30 zones, 1200 bytes.
+Jan 24 06:56:45 :: Loading rooms.
+Jan 24 06:56:45 ::    1880 rooms, 210560 bytes.
+Jan 24 06:56:45 :: Renumbering rooms.
+Jan 24 06:56:45 :: Checking start rooms.
+Jan 24 06:56:45 :: Loading mobs and generating index.
+Jan 24 06:56:45 ::    569 mobs, 9104 bytes in index, 268568 bytes in prototypes.
+Jan 24 06:56:45 :: Loading objs and generating index.
+Jan 24 06:56:45 ::    679 objs, 10864 bytes in index, 119504 bytes in prototypes.
+Jan 24 06:56:45 :: Renumbering zone table.
+Jan 24 06:56:45 :: Loading shops.
+Jan 24 06:56:45 :: Loading help entries.
+Jan 24 06:56:45 ::    298 entries, 7152 bytes.
+Jan 24 06:56:45 :: Generating player index.
+Jan 24 06:56:45 ::    1 players in database.
+Jan 24 06:56:45 :: Loading fight messages.
+Jan 24 06:56:45 :: Loading social messages.
+Jan 24 06:56:45 :: Assigning function pointers:
+Jan 24 06:56:45 ::    Mobiles.
+Jan 24 06:56:45 ::    Shopkeepers.
+Jan 24 06:56:45 ::    Objects.
+Jan 24 06:56:45 ::    Rooms.
+Jan 24 06:56:45 :: Assigning spell and skill levels.
+Jan 24 06:56:45 :: Sorting command list and spells.
+Jan 24 06:56:45 :: Booting mail system.
+Jan 24 06:56:45 ::    0 bytes read.
+Jan 24 06:56:45 ::    Mail file read -- 0 messages.
+Jan 24 06:56:45 :: Reading banned site and invalid-name list.
+Jan 24 06:56:45 ::    Ban file 'etc/badsites' doesn't exist.
+Jan 24 06:56:45 :: Booting houses.
+Jan 24 06:56:45 :: Resetting #0: Limbo - Internal (rooms 0-99).
+Jan 24 06:56:45 :: Resetting #9: River Island Of Minos (rooms 900-999).
+Jan 24 06:56:45 :: Resetting #12: God Simplex (rooms 1200-1299).
+Jan 24 06:56:45 :: Resetting #15: The Straight Path (rooms 1500-1599).
+Jan 24 06:56:45 :: Resetting #25: The High Tower Of Magic (rooms 2500-2699).
+Jan 24 06:56:45 :: Resetting #30: Northern Midgaard Main City (rooms 3000-3099).
+Jan 24 06:56:45 :: Resetting #31: Southern part of Midgaard (rooms 3100-3299).
+Jan 24 06:56:45 :: Resetting #33: The Three Of Swords (rooms 3300-3399).
+Jan 24 06:56:45 :: Resetting #35: Miden'Nir (rooms 3500-3599).
+Jan 24 06:56:45 :: Resetting #36: The Chessboard of Midgaard (rooms 3600-3699).
+Jan 24 06:56:45 :: Resetting #40: Mines of Moria (rooms 4000-4198).
+Jan 24 06:56:45 :: Resetting #50: The Great Eastern Desert (rooms 5000-5099).
+Jan 24 06:56:45 :: Resetting #51: Drow City (rooms 5100-5199).
+Jan 24 06:56:45 :: Resetting #52: The City Of Thalos (rooms 5200-5299).
+Jan 24 06:56:45 :: Resetting #53: The Great Pyramid (rooms 5300-5399).
+Jan 24 06:56:45 :: Resetting #54: New Thalos (rooms 5400-5699).
+Jan 24 06:56:45 :: Resetting #60: Haon-Dor, Light Forest (rooms 6000-6099).
+Jan 24 06:56:45 :: Resetting #61: Haon-Dor, Dark Forest (rooms 6100-6199).
+Jan 24 06:56:45 :: Resetting #62: The Orc Enclave (rooms 6200-6299).
+Jan 24 06:56:45 :: Resetting #63: Arachnos (rooms 6300-6399).
+Jan 24 06:56:45 :: Resetting #64: Rand's Tower (rooms 6400-6499).
+Jan 24 06:56:45 :: Resetting #65: The Dwarven Kingdom (rooms 6500-6599).
+Jan 24 06:56:45 :: Resetting #70: The Sewer, First Level (rooms 7000-7099).
+Jan 24 06:56:45 :: Resetting #71: The Second Sewer (rooms 7100-7199).
+Jan 24 06:56:45 :: Resetting #72: The Sewer Maze (rooms 7200-7299).
+Jan 24 06:56:45 :: Resetting #73: The Tunnels In The Sewer (rooms 7300-7399).
+Jan 24 06:56:45 :: Resetting #79: Redferne's Residence (rooms 7900-7999).
+Jan 24 06:56:45 :: Resetting #120: Rome (rooms 12000-12099).
+Jan 24 06:56:45 :: Resetting #150: King Welmar's Castle (rooms 15000-15099).
+Jan 24 06:56:45 :: Resetting #186: Newbie Zone (rooms 18600-18699).
+Jan 24 06:56:45 :: Boot db -- DONE.
+Jan 24 06:56:45 :: Signal trapping.
+Jan 24 06:56:45 :: Entering game loop.
+Jan 24 06:56:45 :: No connections.  Going to sleep.
+Jan 24 06:57:06 :: New connection.  Waking up.
+Jan 24 06:57:16 :: David [localhost] new player.
+Jan 24 06:57:18 :: David entering game with no equipment.
+Jan 24 06:57:18 :: David advanced to level 1
+Jan 24 06:57:56 :: David killed by the newbie monster at The Entrance To The Newbie Zone
+Jan 24 06:57:58 :: David entering game with no equipment.
+Jan 24 06:58:23 :: Stabaho [localhost] has connected.
+Jan 24 06:58:24 :: Stabaho retrieving crash-saved items and entering game.
+Jan 24 06:58:24 :: Stabaho (level 34) has 1 object (max 30).
+Jan 24 07:02:06 :: nusage: 2   sockets connected, 2   sockets playing
+Jan 24 07:05:14 :: David advanced 1 level to level 2.
+Jan 24 07:06:56 :: David advanced 1 level to level 3.
+Jan 24 07:07:06 :: nusage: 2   sockets connected, 2   sockets playing
+Jan 24 07:09:58 :: David advanced 1 level to level 4.
+Jan 24 07:12:06 :: nusage: 2   sockets connected, 2   sockets playing
+Jan 24 07:12:38 :: David has quit the game.
+Jan 24 07:12:40 :: Losing player: David.
+Jan 24 07:13:10 :: (GC) Shutdown by Stabaho.
+Jan 24 07:13:10 :: Closing all sockets.
+Jan 24 07:13:10 :: Closing link to: Stabaho.
+Jan 24 07:13:10 :: Saving current MUD time.
+Jan 24 07:13:10 :: Normal termination of game.
+Jan 24 07:13:10 :: Clearing game world.
+Jan 24 07:13:10 :: Clearing other memory.
+Jan 24 07:13:10 :: Done.
+Quick boot mode -- rent check supressed.
+Using file descriptor for logging.
+autoscript killed Tue Jan 24 07:13:10 CST 2017

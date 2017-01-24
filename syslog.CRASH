@@ -1,0 +1,30 @@
+Jan 24 06:56:45 :: Entering game loop.
+Jan 24 06:56:45 :: No connections.  Going to sleep.
+Jan 24 06:57:06 :: New connection.  Waking up.
+Jan 24 06:57:16 :: David [localhost] new player.
+Jan 24 06:57:18 :: David entering game with no equipment.
+Jan 24 06:57:18 :: David advanced to level 1
+Jan 24 06:57:56 :: David killed by the newbie monster at The Entrance To The Newbie Zone
+Jan 24 06:57:58 :: David entering game with no equipment.
+Jan 24 06:58:23 :: Stabaho [localhost] has connected.
+Jan 24 06:58:24 :: Stabaho retrieving crash-saved items and entering game.
+Jan 24 06:58:24 :: Stabaho (level 34) has 1 object (max 30).
+Jan 24 07:02:06 :: nusage: 2   sockets connected, 2   sockets playing
+Jan 24 07:05:14 :: David advanced 1 level to level 2.
+Jan 24 07:06:56 :: David advanced 1 level to level 3.
+Jan 24 07:07:06 :: nusage: 2   sockets connected, 2   sockets playing
+Jan 24 07:09:58 :: David advanced 1 level to level 4.
+Jan 24 07:12:06 :: nusage: 2   sockets connected, 2   sockets playing
+Jan 24 07:12:38 :: David has quit the game.
+Jan 24 07:12:40 :: Losing player: David.
+Jan 24 07:13:10 :: (GC) Shutdown by Stabaho.
+Jan 24 07:13:10 :: Closing all sockets.
+Jan 24 07:13:10 :: Closing link to: Stabaho.
+Jan 24 07:13:10 :: Saving current MUD time.
+Jan 24 07:13:10 :: Normal termination of game.
+Jan 24 07:13:10 :: Clearing game world.
+Jan 24 07:13:10 :: Clearing other memory.
+Jan 24 07:13:10 :: Done.
+Quick boot mode -- rent check supressed.
+Using file descriptor for logging.
+autoscript killed Tue Jan 24 07:13:10 CST 2017
