@@ -59,6 +59,8 @@
 #include "handler.h"
 #include "db.h"
 #include "house.h"
+#include "oasis.h"
+#include "genolc.h"
 
 #ifdef HAVE_ARPA_TELNET_H
 #include <arpa/telnet.h>
@@ -75,18 +77,11 @@ extern struct ban_list_element *ban_list;
 extern int num_invalid;
 extern char *GREETINGS;
 extern const char *circlemud_version;
+extern const char *oasisolc_version;
 extern int circle_restrict;
 extern int mini_mud;
 extern int no_rent_check;
 extern FILE *player_fl;
-extern ush_int DFLT_PORT;
-extern const char *DFLT_DIR;
-extern const char *DFLT_IP;
-extern const char *LOGNAME;
-extern int max_playing;
-extern int nameserver_is_slow;	/* see config.c */
-extern int auto_save;		/* see config.c */
-extern int autosave_time;	/* see config.c */
 extern int *cmd_sort_info;
 
 extern struct time_info_data time_info;		/* In db.c */
@@ -108,7 +103,6 @@ struct timeval null_time;	/* zero-valued time structure */
 byte reread_wizlist;		/* signal: SIGUSR1 */
 byte emergency_unban;		/* signal: SIGUSR2 */
 FILE *logfile = NULL;		/* Where to send the log messages. */
-const char *text_overflow = "**OVERFLOW**\r\n";
 
 /* functions in this file */
 RETSIGTYPE reread_wizlists(int sig);
@@ -142,6 +136,7 @@ void heartbeat(int pulse);
 struct in_addr *get_bind_addr(void);
 int parse_ip(const char *addr, struct in_addr *inaddr);
 int set_sendbuf(socket_t s);
+void free_bufpool(void);
 void setup_log(const char *filename, int fd);
 int open_logfile(const char *filename, FILE *stderr_fp);
 #if defined(POSIX)
@@ -162,7 +157,9 @@ void clear_free_list(void);
 void free_messages(void);
 void Board_clear_all(void);
 void free_social_messages(void);
+void free_mail_index(void);
 void Free_Invalid_List(void);
+void load_config(void);
 
 #ifdef __CXREF__
 #undef FD_ZERO
@@ -223,16 +220,47 @@ int main(int argc, char **argv)
   GUSIDefaultSetup();
 #endif
 
-  port = DFLT_PORT;
-  dir = DFLT_DIR;
+  /****************************************************************************/
+  /** Load the game configuration.                                           **/
+  /** We must load BEFORE we use any of the constants stored in constants.c. **/
+  /** Otherwise, there will be no variables set to set the rest of the vars  **/
+  /** to, which will mean trouble --> Mythran                                **/
+  /****************************************************************************/
+  CONFIG_CONFFILE = NULL;
+  while ((pos < argc) && (*(argv[pos]) == '-')) {
+    if (*(argv[pos] + 1) == 'f') {
+      if (*(argv[pos] + 2))
+	CONFIG_CONFFILE = argv[pos] + 2;
+      else if (++pos < argc)
+	CONFIG_CONFFILE = argv[pos];
+      else {
+	puts("SYSERR: File name to read from expected after option -f.");
+	exit(1);
+      }
+    }
+    pos++;
+  }
+  pos = 1;
+
+  if (!CONFIG_CONFFILE)
+    CONFIG_CONFFILE = strdup(CONFIG_FILE);
+
+  load_config();
+  
+  port = CONFIG_DFLT_PORT;
+  dir = CONFIG_DFLT_DIR;
 
   while ((pos < argc) && (*(argv[pos]) == '-')) {
     switch (*(argv[pos] + 1)) {
+    case 'f':
+      if (! *(argv[pos] + 2))
+	++pos;
+      break;
     case 'o':
       if (*(argv[pos] + 2))
-	LOGNAME = argv[pos] + 2;
+	CONFIG_LOGNAME = argv[pos] + 2;
       else if (++pos < argc)
-	LOGNAME = argv[pos];
+	CONFIG_LOGNAME = argv[pos];
       else {
 	puts("SYSERR: File name to log to expected after option -o.");
 	exit(1);
@@ -276,10 +304,12 @@ int main(int argc, char **argv)
               "  -d <directory> Specify library directory (defaults to 'lib').\n"
               "  -h             Print this command line argument help.\n"
               "  -m             Start in mini-MUD mode.\n"
+	      "  -f<file>       Use <file> for configuration.\n"
 	      "  -o <file>      Write log to <file> instead of stderr.\n"
               "  -q             Quick boot (doesn't scan rent for object limits)\n"
               "  -r             Restrict MUD -- no new players allowed.\n"
-              "  -s             Suppress special procedure assignments.\n",
+              "  -s             Suppress special procedure assignments.\n"
+              " Note:		These arguments are 'CaSe SeNsItIvE!!!'\n",
 		 argv[0]
       );
       exit(0);
@@ -301,13 +331,15 @@ int main(int argc, char **argv)
   }
 
   /* All arguments have been parsed, try to open log file. */
-  setup_log(LOGNAME, STDERR_FILENO);
+  setup_log(CONFIG_LOGNAME, STDERR_FILENO);
 
   /*
    * Moved here to distinguish command line options and to show up
    * in the log if stderr is redirected to a file.
    */
+  log("Using %s for configuration.", CONFIG_CONFFILE);
   log("%s", circlemud_version);
+  log("%s", oasisolc_version);
 
   if (chdir(dir) < 0) {
     perror("SYSERR: Fatal error changing to data directory");
@@ -327,15 +359,18 @@ int main(int argc, char **argv)
 
   if (!scheck) {
     log("Clearing other memory.");
+    free_bufpool();             /* comm.c */
     free_player_index();	/* db.c */
     free_messages();		/* fight.c */
     clear_free_list();		/* mail.c */
+    free_mail_index();          /* mail.c */
     free_text_files();		/* db.c */
     Board_clear_all();		/* boards.c */
     free(cmd_sort_info);	/* act.informative.c */
     free_social_messages();	/* act.social.c */
     free_help();		/* db.c */
     Free_Invalid_List();	/* ban.c */
+    free_strings(&config_info, OASIS_CFG); /* oasis_delete.c */
   }
 
   log("Done.");
@@ -382,6 +417,9 @@ void init_game(ush_int port)
 
   CLOSE_SOCKET(mother_desc);
   fclose(player_fl);
+
+  if (circle_reboot != 2)
+    save_all();
 
   log("Saving current MUD time.");
   save_mud_time(&time_info);
@@ -498,7 +536,7 @@ socket_t init_socket(ush_int port)
 int get_max_players(void)
 {
 #ifndef CIRCLE_UNIX
-  return (max_playing);
+  return (CONFIG_MAX_PLAYING);
 #else
 
   int max_descs = 0;
@@ -527,11 +565,11 @@ int get_max_players(void)
     }
 #ifdef RLIM_INFINITY
     if (limit.rlim_max == RLIM_INFINITY)
-      max_descs = max_playing + NUM_RESERVED_DESCS;
+      max_descs = CONFIG_MAX_PLAYING + NUM_RESERVED_DESCS;
     else
-      max_descs = MIN(max_playing + NUM_RESERVED_DESCS, limit.rlim_max);
+      max_descs = MIN(CONFIG_MAX_PLAYING + NUM_RESERVED_DESCS, limit.rlim_max);
 #else
-    max_descs = MIN(max_playing + NUM_RESERVED_DESCS, limit.rlim_max);
+    max_descs = MIN(CONFIG_MAX_PLAYING + NUM_RESERVED_DESCS, limit.rlim_max);
 #endif
   }
 
@@ -552,7 +590,7 @@ int get_max_players(void)
   errno = 0;
   if ((max_descs = sysconf(_SC_OPEN_MAX)) < 0) {
     if (errno == 0)
-      max_descs = max_playing + NUM_RESERVED_DESCS;
+      max_descs = CONFIG_MAX_PLAYING + NUM_RESERVED_DESCS;
     else {
       perror("SYSERR: Error calling sysconf");
       exit(1);
@@ -561,11 +599,11 @@ int get_max_players(void)
 #else
   /* if everything has failed, we'll just take a guess */
   method = "random guess";
-  max_descs = max_playing + NUM_RESERVED_DESCS;
+  max_descs = CONFIG_MAX_PLAYING + NUM_RESERVED_DESCS;
 #endif
 
   /* now calculate max _players_ based on max descs */
-  max_descs = MIN(max_playing, max_descs - NUM_RESERVED_DESCS);
+  max_descs = MIN(CONFIG_MAX_PLAYING, max_descs - NUM_RESERVED_DESCS);
 
   if (max_descs <= 0) {
     log("SYSERR: Non-positive max player limit!  (Set at %d using %s).",
@@ -737,10 +775,10 @@ void game_loop(socket_t mother_desc)
       }
       d->has_prompt = FALSE;
 
-      if (d->str)		/* Writing boards, mail, etc. */
-	string_add(d, comm);
-      else if (d->showstr_count) /* Reading something w/ pager */
+      if (d->showstr_count) /* Reading something w/ pager */
 	show_string(d, comm);
+      else if (d->str)		/* Writing boards, mail, etc. */
+	string_add(d, comm);
       else if (STATE(d) != CON_PLAYING) /* In menus, etc. */
 	nanny(d, comm);
       else {			/* else: we're playing normally. */
@@ -756,17 +794,17 @@ void game_loop(socket_t mother_desc)
     for (d = descriptor_list; d; d = next_d) {
       next_d = d->next;
       if (*(d->output) && FD_ISSET(d->descriptor, &output_set)) {
-	/* Output for this player is ready. */
-
-        process_output(d);
-        if (d->bufptr == 0)	/* All output sent. */
-          d->has_prompt = TRUE;
+	/* Output for this player is ready */
+	if (process_output(d) < 0)
+	  close_socket(d);
+	else
+	  d->has_prompt = 1;
       }
     }
 
     /* Print prompts for other descriptors who had no other output */
     for (d = descriptor_list; d; d = d->next) {
-      if (!d->has_prompt && d->bufptr == 0) {
+      if (!d->has_prompt) {
 	write_to_descriptor(d->descriptor, make_prompt(d));
 	d->has_prompt = TRUE;
       }
@@ -850,8 +888,8 @@ void heartbeat(int pulse)
     fflush(player_fl);
   }
 
-  if (auto_save && !(pulse % PULSE_AUTOSAVE)) {	/* 1 minute */
-    if (++mins_since_crashsave >= autosave_time) {
+  if (CONFIG_AUTO_SAVE && !(pulse % PULSE_AUTOSAVE)) {	/* 1 minute */
+    if (++mins_since_crashsave >= CONFIG_AUTOSAVE_TIME) {
       mins_since_crashsave = 0;
       Crash_save_all();
       House_save_all();
@@ -928,7 +966,7 @@ void record_usage(void)
 
   for (d = descriptor_list; d; d = d->next) {
     sockets_connected++;
-    if (STATE(d) == CON_PLAYING)
+    if (IS_PLAYING(d))
       sockets_playing++;
   }
 
@@ -989,13 +1027,13 @@ char *make_prompt(struct descriptor_data *d)
 
   /* Note, prompt is truncated at MAX_PROMPT_LENGTH chars (structs.h) */
 
-  if (d->str)
-    strcpy(prompt, "] ");	/* strcpy: OK (for 'MAX_PROMPT_LENGTH >= 3') */
-  else if (d->showstr_count) {
+  if (d->showstr_count)
     snprintf(prompt, sizeof(prompt),
 	    "\r\n[ Return to continue, (q)uit, (r)efresh, (b)ack, or page number (%d/%d) ]",
 	    d->showstr_page, d->showstr_count);
-  } else if (STATE(d) == CON_PLAYING && !IS_NPC(d->character)) {
+  else if (d->str)
+    strcpy(prompt, "] ");	/* strcpy: OK (for 'MAX_PROMPT_LENGTH >= 3') */
+  else if (STATE(d) == CON_PLAYING && !IS_NPC(d->character)) {
     int count;
     size_t len = 0;
 
@@ -1006,7 +1044,25 @@ char *make_prompt(struct descriptor_data *d)
       if (count >= 0)
         len += count;
     }
-
+    /* show only when below 25% */
+    if (PRF_FLAGGED(d->character, PRF_DISPAUTO) && len < sizeof(prompt)) {
+      struct char_data *ch = d->character;
+      if (GET_HIT(ch) << 2 < GET_MAX_HIT(ch) ) {
+        count = snprintf(prompt + len, sizeof(prompt) - len, "%dH ", GET_HIT(ch));
+        if (count >= 0)
+          len += count;
+      }
+      if (GET_MANA(ch) << 2 < GET_MAX_MANA(ch) && len < sizeof(prompt)) {
+        count = snprintf(prompt + len, sizeof(prompt) - len, "%dM ", GET_MANA(ch));
+        if (count >= 0)
+          len += count;
+      }
+      if (GET_MOVE(ch) << 2 < GET_MAX_MOVE(ch) && len < sizeof(prompt)) {
+        count = snprintf(prompt + len, sizeof(prompt) - len, "%dV ", GET_MOVE(ch));
+        if (count >= 0)
+          len += count;
+      }
+    } else { /* not auto prompt */
     if (PRF_FLAGGED(d->character, PRF_DISPHP) && len < sizeof(prompt)) {
       count = snprintf(prompt + len, sizeof(prompt) - len, "%dH ", GET_HIT(d->character));
       if (count >= 0)
@@ -1021,6 +1077,13 @@ char *make_prompt(struct descriptor_data *d)
 
     if (PRF_FLAGGED(d->character, PRF_DISPMOVE) && len < sizeof(prompt)) {
       count = snprintf(prompt + len, sizeof(prompt) - len, "%dV ", GET_MOVE(d->character));
+      if (count >= 0)
+        len += count;
+    }
+    }
+
+    if (PRF_FLAGGED(d->character, PRF_BUILDWALK) && len < sizeof(prompt)) {
+      count = snprintf(prompt + len, sizeof(prompt) - len, "BUILDWALKING ");
       if (count >= 0)
         len += count;
     }
@@ -1115,6 +1178,7 @@ size_t write_to_output(struct descriptor_data *t, const char *txt, ...)
 /* Add a new string to a player's output queue. */
 size_t vwrite_to_output(struct descriptor_data *t, const char *format, va_list args)
 {
+  const char *text_overflow = "\r\nOVERFLOW\r\n";
   static char txt[MAX_STRING_LENGTH];
   size_t wantsize;
   int size;
@@ -1177,6 +1241,18 @@ size_t vwrite_to_output(struct descriptor_data *t, const char *format, va_list a
   return (t->bufspace);
 }
 
+void free_bufpool(void)
+{
+  struct txt_block *tmp;
+ 
+  while (bufpool) {
+    tmp = bufpool->next;
+    if (bufpool->text)
+      free(bufpool->text);
+    free(bufpool);
+    bufpool = tmp;
+  }
+}
 
 
 /* ******************************************************************
@@ -1200,12 +1276,13 @@ struct in_addr *get_bind_addr()
   memset((char *) &bind_addr, 0, sizeof(bind_addr));
 
   /* If DLFT_IP is unspecified, use INADDR_ANY */
-  if (DFLT_IP == NULL) {
+  if (CONFIG_DFLT_IP == NULL) {
     bind_addr.s_addr = htonl(INADDR_ANY);
   } else {
     /* If the parsing fails, use INADDR_ANY */
-    if (!parse_ip(DFLT_IP, &bind_addr)) {
-      log("SYSERR: DFLT_IP of %s appears to be an invalid IP address",DFLT_IP);
+    if (!parse_ip(CONFIG_DFLT_IP, &bind_addr)) {
+      log("SYSERR: DFLT_IP of %s appears to be an invalid IP address",
+          CONFIG_DFLT_IP);
       bind_addr.s_addr = htonl(INADDR_ANY);
     }
   }
@@ -1311,7 +1388,7 @@ int new_descriptor(socket_t s)
   for (newd = descriptor_list; newd; newd = newd->next)
     sockets_connected++;
 
-  if (sockets_connected >= max_players) {
+  if (sockets_connected >= CONFIG_MAX_PLAYING) {
     write_to_descriptor(desc, "Sorry, CircleMUD is full right now... please try again later!\r\n");
     CLOSE_SOCKET(desc);
     return (0);
@@ -1320,11 +1397,12 @@ int new_descriptor(socket_t s)
   CREATE(newd, struct descriptor_data, 1);
 
   /* find the sitename */
-  if (nameserver_is_slow || !(from = gethostbyaddr((char *) &peer.sin_addr,
+  if (CONFIG_NS_IS_SLOW ||
+      !(from = gethostbyaddr((char *) &peer.sin_addr,
 				      sizeof(peer.sin_addr), AF_INET))) {
 
     /* resolution failed */
-    if (!nameserver_is_slow)
+    if (!CONFIG_NS_IS_SLOW)
       perror("SYSERR: gethostbyaddr");
 
     /* find the numeric site address */
@@ -1930,9 +2008,13 @@ void close_socket(struct descriptor_data *d)
       if (*(d->str))
         free(*(d->str));
       free(d->str);
+      d->str = NULL;
+    } else if (d->backstr && !IS_NPC(d->character) && !PLR_FLAGGED(d->character, PLR_WRITING)) {
+      free(d->backstr);      /* editing description ... not olc */
+      d->backstr = NULL;
     }
 
-    if (STATE(d) == CON_PLAYING || STATE(d) == CON_DISCONNECT) {
+    if (IS_PLAYING(d) || STATE(d) == CON_DISCONNECT) {
       struct char_data *link_challenged = d->original ? d->original : d->character;
 
       /* We are guaranteed to have a person. */
@@ -1963,6 +2045,21 @@ void close_socket(struct descriptor_data *d)
     free(d->showstr_head);
   if (d->showstr_count)
     free(d->showstr_vector);
+
+  /*. Kill any OLC stuff .*/
+  switch (d->connected) {
+    case CON_OEDIT:
+    case CON_REDIT:
+    case CON_ZEDIT:
+    case CON_MEDIT:
+    case CON_SEDIT:
+    case CON_TEDIT:
+    case CON_AEDIT:
+      cleanup_olc(d, CLEANUP_ALL);
+      break;
+    default:
+      break;
+  }
 
   free(d);
 }

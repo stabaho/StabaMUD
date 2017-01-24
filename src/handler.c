@@ -25,7 +25,6 @@ int extractions_pending = 0;
 
 /* external vars */
 extern struct char_data *combat_list;
-extern const char *MENU;
 
 /* local functions */
 int apply_ac(struct char_data *ch, int eq_pos);
@@ -40,7 +39,7 @@ ACMD(do_return);
 
 char *fname(const char *namelist)
 {
-  static char holder[30];
+  static char holder[READ_SIZE];
   char *point;
 
   for (point = holder; isalpha(*namelist); namelist++, point++)
@@ -51,10 +50,14 @@ char *fname(const char *namelist)
   return (holder);
 }
 
-
-int isname(const char *str, const char *namelist)
+/* Stock isname().  Leave this here even if you put in a newer  *
+ * isname().  Used for OasisOLC.                                */
+int is_name(const char *str, const char *namelist)
 {
   const char *curname, *curstr;
+
+  if (!*str || !*namelist || !str || !namelist)
+    return (0);
 
   curname = namelist;
   for (;;) {
@@ -79,6 +82,26 @@ int isname(const char *str, const char *namelist)
       return (0);
     curname++;			/* first char of new name */
   }
+}
+
+/* allow abbreviations */
+#define WHITESPACE " \t"
+int isname(const char *str, const char *namelist)
+{
+  char *newlist;
+  char *curtok;
+
+  if (!str || !*str || !namelist || !*namelist)
+    return 0;
+
+  newlist = strdup(namelist); /* make a copy since strtok 'modifies' strings */
+  for(curtok = strtok(newlist, WHITESPACE); curtok; curtok = strtok(NULL, WHITESPACE))
+    if (curtok && is_abbrev(str, curtok)) {
+      free(newlist);
+      return 1;
+    }
+  free(newlist);
+  return 0;
 }
 
 
@@ -894,7 +917,7 @@ void extract_char_final(struct char_data *ch)
           STATE(d) = CON_CLOSE;
       }
       STATE(ch->desc) = CON_MENU;
-      write_to_output(ch->desc, "%s", MENU);
+      write_to_output(ch->desc, "%s", CONFIG_MENU);
     }
   }
 
