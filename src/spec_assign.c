@@ -37,6 +37,7 @@ SPECIAL(snake);
 SPECIAL(thief);
 SPECIAL(magic_user);
 SPECIAL(bank);
+SPECIAL(temple_cleric);
 SPECIAL(gen_board);
 void assign_kings_castle(void);
 
@@ -117,6 +118,7 @@ void assign_mobiles(void)
   ASSIGNMOB(3068, janitor);
   ASSIGNMOB(3095, cryogenicist);
   ASSIGNMOB(3105, mayor);
+  ASSIGNMOB(3097, temple_cleric);
 
   /* MORIA */
   ASSIGNMOB(4000, snake);

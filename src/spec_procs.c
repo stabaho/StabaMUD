@@ -50,6 +50,7 @@ SPECIAL(janitor);
 SPECIAL(cityguard);
 SPECIAL(pet_shops);
 SPECIAL(bank);
+SPECIAL(temple_cleric);
 
 
 /* ********************************************************************
@@ -323,6 +324,66 @@ SPECIAL(mayor)
   return (FALSE);
 }
 
+/*
+   This is a spec_proc for a temple cleric.
+   He'll cure poison first, then blindness, and THEN heal people of
+   their wounds.  He heals the person who has the least percentage
+   of their maxhit first.  Developed, and in use on ImmortalQuest/2.
+   telnet to annex.net, port 2001
+
+   Developed by Necro.
+*/
+
+SPECIAL(temple_cleric)
+{
+  struct char_data *vict;
+  struct char_data *hitme = NULL;
+  static int this_hour;
+  float temp1 = 1;
+  float temp2 = 1;
+
+  if (cmd)
+    return FALSE;
+
+  if (time_info.hours != 0)
+    {
+    this_hour = time_info.hours;
+    for (vict = world[ch->in_room].people; vict; vict = vict->next_in_room)
+      {
+      if (IS_AFFECTED(vict,AFF_POISON))
+        hitme = vict;
+      }
+    if (hitme != NULL)
+      {
+      cast_spell(ch, hitme, NULL, SPELL_REMOVE_POISON);
+      return TRUE;
+      }
+    for (vict = world[ch->in_room].people; vict; vict = vict->next_in_room)
+      if (IS_AFFECTED(vict,AFF_BLIND))
+        hitme = vict;
+    if (hitme != NULL)
+      {
+      cast_spell(ch, hitme, NULL, SPELL_CURE_BLIND);
+      return TRUE;
+      }
+
+    for (vict = world[ch->in_room].people; vict; vict = vict->next_in_room)
+      {
+      temp1 = (float) GET_HIT(vict) / (float) GET_MAX_HIT(vict);
+      if (temp1 < temp2)
+        {
+        temp2 = temp1;
+        hitme = vict;
+        }
+      }
+    if (hitme != NULL)
+      {
+      cast_spell(ch, hitme, NULL, SPELL_HEAL);
+      return TRUE;
+      }
+    }
+  return FALSE;
+}
 
 /* ********************************************************************
 *  General special procedures for mobiles                             *
